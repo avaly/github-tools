@@ -2,6 +2,14 @@
 
 A set of tools to automate some GitHub workflows.
 
+## `clean-branches`
+
+Select multiple local git branches and remove them both from local and remote.
+
+```
+$ ./clean-branches.js
+```
+
 ## `mark-read`
 
 Automatically read notifications of watched repositories based on some rules:
