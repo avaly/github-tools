@@ -7,4 +7,8 @@ module.exports = {
 	},
 	// Control the types of notifications to read
 	readTypes: ['Issue', 'PullRequest'],
+	// Select which branches to use for status updates (direct commits on these branches will be included)
+	statusBranches: ['master'],
+	// Select which repositories prefixes to use for status updates
+	statusRepos: ['foo/'],
 };

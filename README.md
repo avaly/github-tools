@@ -18,6 +18,16 @@ Automatically read notifications of watched repositories based on some rules:
 $ ./mark-read.js
 ```
 
+## `status`
+
+Automatically generates a status of your activity for a specific day:
+
+```
+$ ./status.js [DELTA_DAYS]
+```
+
+`DELTA_DAYS` is the number of days to look back in time for status events. Defaults to `1` (yesterday)
+
 Configuration:
 
 ```js
@@ -30,5 +40,9 @@ module.exports = {
 	},
 	// Control the types of notifications to read
 	readTypes: ['Issue', 'PullRequest'],
+	// Select which branches to use for status updates (direct commits on these branches will be included)
+	statusBranches: ['master', 'develop'],
+	// Select which repositories prefixes to use for status updates
+	statusRepos: ['org-a/', 'org-b/'],
 };
 ```
