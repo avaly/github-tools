@@ -2,7 +2,7 @@
 
 A set of tools to automate some GitHub workflows.
 
-## `clean-branches`
+## clean-branches
 
 Select multiple local git branches and remove them both from local and remote.
 
@@ -10,7 +10,7 @@ Select multiple local git branches and remove them both from local and remote.
 $ ./clean-branches.js
 ```
 
-## `mark-read`
+## mark-read
 
 Automatically read notifications of watched repositories based on some rules:
 
@@ -18,7 +18,7 @@ Automatically read notifications of watched repositories based on some rules:
 $ ./mark-read.js
 ```
 
-## `status`
+## status
 
 Automatically generates a status of your activity for a specific day:
 
@@ -28,7 +28,16 @@ $ ./status.js [DELTA_DAYS]
 
 `DELTA_DAYS` is the number of days to look back in time for status events. Defaults to `1` (yesterday)
 
-Configuration:
+## Configuration
+
+A Github [Personal access token](https://github.com/settings/tokens) (with `notifications, repo, user` scopes)
+is required in an `.env` file:
+
+```
+GITHUB_ACCESS_TOKEN=foobar
+```
+
+Then create a `config.js` file and customize it:
 
 ```js
 module.exports = {
