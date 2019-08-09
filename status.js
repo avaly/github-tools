@@ -20,14 +20,14 @@ const PR = 'pr';
 const SHIP = 'ship';
 const PR_APPROVED = 'APPROVED';
 const PR_COMMENTED = 'COMMENTED';
-const PR_REQUESTED_CHANGES = 'REQUESTED_CHANGES';
+const PR_CHANGES_REQUESTED = 'CHANGES_REQUESTED';
 const EMOJIS = {
 	// status types
 	[PR]: [':pr:'],
 	[SHIP]: [':ship:', ':shipit:'],
 	// reviews types
 	[PR_APPROVED]: [':github_approved:'],
-	[PR_REQUESTED_CHANGES]: [':github_denied:'],
+	[PR_CHANGES_REQUESTED]: [':github_denied:'],
 	// commit types
 	[CHORE]: [':wrench:'],
 	[DOCS]: [':pencil:'],
@@ -45,7 +45,7 @@ const ALLOWED_EVENTS = [
 	PULL_REQUEST_REVIEW_COMMENT_EVENT,
 	PUSH_EVENT,
 ];
-const PR_ACTIONS = [PR_APPROVED, PR_REQUESTED_CHANGES];
+const PR_ACTIONS = [PR_APPROVED, PR_CHANGES_REQUESTED];
 
 const octokit = new Octokit({
 	auth: process.env.GITHUB_ACCESS_TOKEN,
@@ -67,6 +67,9 @@ function sortStatus(itemA, itemB) {
 }
 
 function random(list) {
+	if (!list.length) {
+		return '';
+	}
 	return list[Math.floor(Math.random() * list.length)];
 }
 
