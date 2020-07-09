@@ -21,6 +21,7 @@ const SHIP = 'ship';
 const PR_APPROVED = 'APPROVED';
 const PR_COMMENTED = 'COMMENTED';
 const PR_CHANGES_REQUESTED = 'CHANGES_REQUESTED';
+const PR_DISMISSED = 'DISMISSED';
 const EMOJIS = {
 	// status types
 	[PR]: [':pr:'],
@@ -52,9 +53,7 @@ const octokit = new Octokit({
 });
 
 const delta = process.argv.length > 2 ? parseInt(process.argv[2], 10) : 1;
-const statusDate = dayjs()
-	.startOf('day')
-	.subtract(delta, 'day');
+const statusDate = dayjs().startOf('day').subtract(delta, 'day');
 
 function sortStatus(itemA, itemB) {
 	if (itemA.repo !== itemB.repo) {
@@ -88,11 +87,20 @@ function emoji(item) {
 	return action;
 }
 
+function repoName(repo) {
+	return Array.isArray(config.statusReposPrefix)
+		? config.statusReposPrefix.reduce(
+				(accumulated, prefix) => accumulated.replace(prefix, ''),
+				repo,
+		  )
+		: repo;
+}
+
 (async () => {
 	const username = (await octokit.users.getAuthenticated()).data.login;
 	const status = [];
 
-	const processEvent = async event => {
+	const processEvent = async (event) => {
 		if (dayjs(event.created_at).isAfter(statusDate, 'day')) {
 			return;
 		}
@@ -108,7 +116,7 @@ function emoji(item) {
 		const [owner, repo] = event.repo.name.split('/');
 
 		if (
-			!config.statusRepos.some(pattern => event.repo.name.includes(pattern))
+			!config.statusRepos.some((pattern) => event.repo.name.includes(pattern))
 		) {
 			return;
 		}
@@ -122,10 +130,12 @@ function emoji(item) {
 				return;
 			}
 
-			const text = `[${repo}] ${commits[0].message.split('\n').shift()}`;
+			const text = `[${repoName(repo)}] ${commits[0].message
+				.split('\n')
+				.shift()}`;
 
 			const prIndex = status.findIndex(
-				item => item.type === PULL_REQUEST_EVENT && item.revision === head,
+				(item) => item.type === PULL_REQUEST_EVENT && item.revision === head,
 			);
 			if (prIndex === -1) {
 				status.push({
@@ -143,11 +153,13 @@ function emoji(item) {
 			const { action, pull_request } = payload;
 			const { number, merge_commit_sha } = pull_request;
 
-			const text = `[${repo}] ${pull_request.title} <${pull_request.html_url}| #${number}>`;
+			const text = `[${repoName(repo)}] ${pull_request.title} <${
+				pull_request.html_url
+			}| #${number}>`;
 
 			if (action === CLOSE) {
 				const commitIndex = status.findIndex(
-					item =>
+					(item) =>
 						item.type === PUSH_EVENT && item.revision === merge_commit_sha,
 				);
 				if (commitIndex > -1) {
@@ -164,7 +176,7 @@ function emoji(item) {
 				});
 			} else if (action === OPEN) {
 				const openedIndex = status.findIndex(
-					item =>
+					(item) =>
 						item.type === PULL_REQUEST_EVENT &&
 						item.action === SHIP &&
 						item.text === text,
@@ -193,10 +205,11 @@ function emoji(item) {
 			});
 
 			const ownReviews = reviews.data.filter(
-				item =>
+				(item) =>
 					item.user.login === username &&
 					dayjs(item.submitted_at).isSame(statusDate, 'day') &&
-					item.state !== PR_COMMENTED,
+					item.state !== PR_COMMENTED &&
+					item.state !== PR_DISMISSED,
 			);
 			if (!ownReviews.length) {
 				return;
@@ -207,10 +220,12 @@ function emoji(item) {
 
 			const [review] = ownReviews;
 
-			const text = `[${repo}] ${pull_request.title} <${pull_request.html_url}| #${number}>`;
+			const text = `[${repoName(repo)}] ${pull_request.title} <${
+				pull_request.html_url
+			}| #${number}>`;
 
 			const reviewIndex = status.findIndex(
-				item => item.type === type && item.text === text,
+				(item) => item.type === type && item.text === text,
 			);
 			if (reviewIndex === -1) {
 				status.push({
@@ -244,5 +259,5 @@ function emoji(item) {
 	status.sort(sortStatus);
 
 	console.info('');
-	console.info(status.map(item => `${emoji(item)} ${item.text}`).join('\n'));
+	console.info(status.map((item) => `${emoji(item)} ${item.text}`).join('\n'));
 })();

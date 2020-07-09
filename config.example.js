@@ -11,4 +11,6 @@ module.exports = {
 	statusBranches: ['master'],
 	// Select which repositories prefixes to use for status updates
 	statusRepos: ['foo/'],
+	// Replace repositories name prefixes
+	statusReposPrefix: ['some-prefix-to-remove'],
 };
