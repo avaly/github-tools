@@ -2,7 +2,7 @@
 
 const { execFileSync } = require('child_process');
 const path = require('path');
-const Octokit = require('@octokit/rest');
+const { Octokit } = require('@octokit/rest');
 const { prompt } = require('enquirer');
 const config = require('./config');
 
@@ -12,7 +12,7 @@ require('dotenv').config({
 
 const octokit = new Octokit();
 
-octokit.authenticate({
+octokit.auth({
 	type: 'token',
 	token: process.env.GITHUB_ACCESS_TOKEN,
 });
@@ -36,16 +36,16 @@ function getBranches() {
 	return execFileSync('git', ['branch'])
 		.toString()
 		.split('\n')
-		.map(line => {
+		.map((line) => {
 			const branch = line.replace(/^\*?\s*/, '');
 			maxLength = Math.max(maxLength, branch.length);
 			return branch;
 		})
 		.filter(
-			branch =>
+			(branch) =>
 				branch.length && !['develop', 'master', 'production'].includes(branch),
 		)
-		.map(branch => {
+		.map((branch) => {
 			const log = execFileSync('git', [
 				'--no-pager',
 				'log',
@@ -90,11 +90,11 @@ function getBranches() {
 		}
 
 		await Promise.all(
-			answers.branches.map(branch => {
+			answers.branches.map((branch) => {
 				console.log(execFileSync('git', ['branch', '-D', branch]).toString());
 
-				return octokit.gitdata
-					.deleteReference({
+				return octokit.git
+					.deleteRef({
 						owner,
 						ref: branch,
 						repo,
@@ -102,12 +102,12 @@ function getBranches() {
 					.then(() => {
 						console.info('Deleted remote branch:', branch);
 					})
-					.catch(err => {
+					.catch((err) => {
 						console.info('Remote branch does not exist:', branch);
 					});
 			}),
 		);
 	} catch (err) {
-		// ignore
+		console.error(err.message);
 	}
 })();
