@@ -13,7 +13,7 @@
 	},
 	"license": "ISC",
 	"dependencies": {
-		"@octokit/rest": "18.0.6",
+		"@octokit/rest": "18.1.0",
 		"dayjs": "1.8.15",
 		"dotenv": "8.0.0",
 		"enquirer": "2.3.1"

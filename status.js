@@ -2,7 +2,7 @@
 
 require('dotenv').config();
 
-const Octokit = require('@octokit/rest');
+const { Octokit } = require('@octokit/rest');
 const dayjs = require('dayjs');
 const config = require('./config');
 
@@ -43,7 +43,7 @@ const PULL_REQUEST_EVENT = 'PullRequestEvent';
 const PUSH_EVENT = 'PushEvent';
 const ALLOWED_EVENTS = [
 	PULL_REQUEST_EVENT,
-	PULL_REQUEST_REVIEW_COMMENT_EVENT,
+	// PULL_REQUEST_REVIEW_COMMENT_EVENT,
 	PUSH_EVENT,
 ];
 const PR_ACTIONS = [PR_APPROVED, PR_CHANGES_REQUESTED];
@@ -52,8 +52,10 @@ const octokit = new Octokit({
 	auth: process.env.GITHUB_ACCESS_TOKEN,
 });
 
-const delta = process.argv.length > 2 ? parseInt(process.argv[2], 10) : 1;
-const statusDate = dayjs().startOf('day').subtract(delta, 'day');
+const from = process.argv.length > 2 ? parseInt(process.argv[2], 10) : 1;
+const until = process.argv.length > 3 ? parseInt(process.argv[3], 10) : 1;
+const fromDate = dayjs().startOf('day').subtract(from, 'day');
+const untilDate = dayjs().endOf('day').subtract(until, 'day');
 
 function sortStatus(itemA, itemB) {
 	if (itemA.repo !== itemB.repo) {
@@ -101,10 +103,10 @@ function repoName(repo) {
 	const status = [];
 
 	const processEvent = async (event) => {
-		if (dayjs(event.created_at).isAfter(statusDate, 'day')) {
+		if (dayjs(event.created_at).isAfter(untilDate, 'day')) {
 			return;
 		}
-		if (dayjs(event.created_at).isBefore(statusDate, 'day')) {
+		if (dayjs(event.created_at).isBefore(fromDate, 'day')) {
 			return true;
 		}
 
@@ -153,9 +155,9 @@ function repoName(repo) {
 			const { action, pull_request } = payload;
 			const { number, merge_commit_sha } = pull_request;
 
-			const text = `[${repoName(repo)}] ${pull_request.title} <${
+			const text = `[${repoName(repo)}] ${pull_request.title} ${
 				pull_request.html_url
-			}| #${number}>`;
+			}`;
 
 			if (action === CLOSE) {
 				const commitIndex = status.findIndex(
@@ -195,7 +197,7 @@ function repoName(repo) {
 
 		// Reviews
 		if (type === PULL_REQUEST_REVIEW_COMMENT_EVENT) {
-			const { comment, pull_request } = payload;
+			const { pull_request } = payload;
 			const { number } = pull_request;
 
 			const reviews = await octokit.pulls.listReviews({
@@ -220,9 +222,9 @@ function repoName(repo) {
 
 			const [review] = ownReviews;
 
-			const text = `[${repoName(repo)}] ${pull_request.title} <${
+			const text = `[${repoName(repo)}] ${pull_request.title} ${
 				pull_request.html_url
-			}| #${number}>`;
+			}`;
 
 			const reviewIndex = status.findIndex(
 				(item) => item.type === type && item.text === text,
@@ -239,12 +241,11 @@ function repoName(repo) {
 		}
 	};
 
-	const options = octokit.activity.listEventsForUser.endpoint.merge({
-		username,
-	});
-
 	let finished = false;
-	for await (const eventsPage of octokit.paginate.iterator(options)) {
+	for await (const eventsPage of octokit.paginate.iterator(
+		octokit.activity.listEventsForAuthenticatedUser,
+		{ username },
+	)) {
 		for (const event of eventsPage.data) {
 			if (await processEvent(event)) {
 				finished = true;
